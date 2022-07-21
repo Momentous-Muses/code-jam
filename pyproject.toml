@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "Name"
+name = "Name"  # FIXME: add a real name
 version = "0.1.0"
 description = ""
-authors = ["Author 1 <email@mail.com>"]
+authors = ["Author 1 <email@mail.com>"]  # FIXME: add authors
 license = "MIT"
 
 [tool.poetry.dependencies]
@@ -16,6 +16,9 @@ pre-commit = "~2.17.0"
 
 # Flake8 plugins, see https://github.com/python-discord/code-jam-template/tree/main#plugin-list
 flake8-docstrings = "~1.6.0"
+
+# PEP8 formatter
+black = "~22.6.0"
 
 
 [build-system]
