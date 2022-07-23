@@ -4,7 +4,11 @@ from fastapi.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
 
 
-"""Run FastAPI server from both web and websocket"""
+"""
+
+uvicorn server:app --reload
+
+Run FastAPI server from both web and websocket"""
 app = FastAPI()
 
 @app.get("/", response_class=RedirectResponse)
