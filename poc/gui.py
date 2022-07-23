@@ -1,19 +1,16 @@
+# flake8: noqa
 # import all the required modules
-import socket
 import threading
 import time
-
-# from tkinter import Tk, Toplevel, Label, LabelFrame, CENTER
 import tkinter as tk
 from random import random
-from tkinter import font, ttk
 
 
 # GUI class for the chat
 class GUI:
     # constructor method
     def __init__(self):
-
+        """Create a new instance of GUI"""
         # chat window which is currently hidden
         self.window = tk.Tk()
         self.window.withdraw()
@@ -60,6 +57,11 @@ class GUI:
         self.window.mainloop()
 
     def go_ahead(self, name):
+        """Complete login
+
+        Args:
+            name (_type_): _description_
+        """
         self.login.destroy()
         self.layout(name)
 
@@ -69,7 +71,11 @@ class GUI:
 
     # The main layout of the chat
     def layout(self, name):
+        """Create Chat page layout
 
+        Args:
+            name (_type_): _description_
+        """
         self.name = name
         # to show chat window
         self.window.deiconify()
@@ -144,6 +150,11 @@ class GUI:
 
     # function to basically start the thread for sending messages
     def sendButton(self, msg):
+        """Receive Button events
+
+        Args:
+            msg (_type_): _description_
+        """
         self.text_cons.config(state=tk.DISABLED)
         self.msg = msg
         self.entry_msg.delete(0, tk.END)
@@ -152,6 +163,9 @@ class GUI:
 
     # function to receive messages
     def receive(self):
+        """
+        Receive messages
+        """
         while True:
             try:
                 # Mimic latency and wait times
@@ -176,6 +190,9 @@ class GUI:
 
     # function to send messages
     def sendMessage(self):
+        """
+        send new message
+        """
         self.text_cons.config(state=tk.DISABLED)
         while True:
             message = f"{self.name}: {self.msg}"

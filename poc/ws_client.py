@@ -1,4 +1,5 @@
 # TODO: Add Exception Handling for websocket disconnect
+# flake8: noqa
 import asyncio
 import typing
 from dataclasses import dataclass
