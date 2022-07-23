@@ -4,7 +4,7 @@
 
 Start the server using
 
-```
+```bash
 uvicorn server.__main__:app --reload
 ```
 
@@ -13,3 +13,7 @@ uvicorn server.__main__:app --reload
 ```
 python -m client
 ```
+
+## Poetry
+
+- https://python-poetry.org/docs/basic-usage/
