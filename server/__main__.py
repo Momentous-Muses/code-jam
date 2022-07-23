@@ -4,7 +4,8 @@ from starlette.staticfiles import StaticFiles
 """
 uvicorn server.__main__:app --reload
 
-Run FastAPI server from both web and websocket"""
+Run FastAPI server with websockets.
+"""
 app = FastAPI()
 
 
