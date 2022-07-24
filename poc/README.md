@@ -1,5 +1,7 @@
 # Proof-of-Concept for Jam Project
 
+`events.py` : Sample Event base class and Event types
+
 `server.py` : WebSockets Server implemented with FastAPI
 
 `gui.py` : Tkinter Chat Client GUI
@@ -17,8 +19,8 @@ Start Client
 > poetry run python poc/ws_client.py
 ```
 
-# TODO
- - Tkinter GUI has not been connected to    `ws_client`
-async callbacks should be started with `async.ensure_future`
+Uncomment as appropriate to run the CLI or GUI chat client
 
- - The Prompt for new text in the `ws_client.py` does not align properly.
+# TODO
+
+ - Ready to go 🚀

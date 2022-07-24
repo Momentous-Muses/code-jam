@@ -17,7 +17,7 @@ class Event:
     """
 
     @classmethod
-    def from_dict(cls, data: Dict[Any, Any]):
+    def from_dict(cls, data: Dict[str, Any]):
         """
         Create a new event instance from a dict of data
 

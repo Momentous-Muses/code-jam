@@ -9,8 +9,9 @@ import threading
 from typing import Awaitable
 
 import asgiref.sync
+import websockets
+import websockets.client
 from gui import ChatClientGUI
-from websockets import connect
 
 
 class ExampleClient:
@@ -46,7 +47,10 @@ class ClientConnection:
     """Websocket Client Connection"""
 
     def __init__(
-        self, ws_connection, producer: Awaitable, consumer: Awaitable, *args, **kwargs
+        self,
+        ws_connection: websockets.client.WebSocketClientProtocol,
+        producer: Awaitable,
+        consumer: Awaitable,
     ):
         """Create a new connection to a websocket
 
@@ -70,7 +74,7 @@ class ClientConnection:
             ClientConnection: A new instance of a client connection
         """
         try:
-            connection = await connect(uri)
+            connection = await websockets.connect(uri)
             return cls(connection, *args, **kwargs)
         except ConnectionError:
             # Failed to connect to the server
