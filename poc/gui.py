@@ -1,42 +1,50 @@
-# flake8: noqa
-# import all the required modules
-import threading
-import time
 import tkinter as tk
-from random import random
+
+import asgiref.sync
 
 
-# GUI class for the chat
-class GUI:
-    # constructor method
-    def __init__(self):
+class ChatClientGUI:
+    """
+    GUI class for the chat client
+
+        - Adapted from: https://www.geeksforgeeks.org/gui-chat-application-using-tkinter-in-python/
+    """
+
+    def __init__(self, *args, **kwargs):
         """Create a new instance of GUI"""
+        self.__create_state_vars()
+
         # chat window which is currently hidden
         self.window = tk.Tk()
         self.window.withdraw()
 
+        self.__draw_login_window()
+
+    def __draw_login_window(self):
         # login window
         self.login = tk.Toplevel()
+
         # set the title
         self.login.title("Login")
         self.login.resizable(width=False, height=False)
         self.login.configure(width=400, height=300)
         # create a Label
-        self.pls = tk.Label(
+        self.login_label = tk.Label(
             self.login,
             text="Please login to continue",
             justify=tk.CENTER,
             font="Helvetica 14 bold",
         )
 
-        self.pls.place(relheight=0.15, relx=0.2, rely=0.07)
+        self.login_label.place(relheight=0.15, relx=0.2, rely=0.07)
+
         # create a Label
         self.label_name = tk.Label(self.login, text="Name: ", font="Helvetica 12")
 
         self.label_name.place(relheight=0.2, relx=0.1, rely=0.2)
 
         # create a entry box for
-        # tyoing the message
+        # typing the message
         self.entry_name = tk.Entry(self.login, font="Helvetica 14")
 
         self.entry_name.place(relwidth=0.4, relheight=0.12, relx=0.35, rely=0.2)
@@ -44,44 +52,49 @@ class GUI:
         # set the focus of the cursor
         self.entry_name.focus()
 
-        # create a Continue Button
-        # along with action
+        # Continue Button
         self.go = tk.Button(
             self.login,
             text="CONTINUE",
             font="Helvetica 14 bold",
-            command=lambda: self.go_ahead(self.entry_name.get()),
+            command=lambda: self.complete_login(self.entry_name.get()),
         )
 
         self.go.place(relx=0.4, rely=0.55)
+
+    def __create_state_vars(self):
+        self.msgs_to_send = []
+        self.is_chatting = False
+
+    def start_mainloop(self):
+        """
+        Draw the GUI Canvas
+
+            - Start the Tkinter GUI eventloop
+        """
         self.window.mainloop()
 
-    def go_ahead(self, name):
-        """Complete login
+    def complete_login(self, name):
+        """
+        Complete login
 
         Args:
-            name (_type_): _description_
+            name (str): Username of the client
         """
         self.login.destroy()
-        self.layout(name)
+        self.draw_chat_layout(name)
+        self.is_chatting = True
 
-        # the thread to receive messages
-        rcv = threading.Thread(target=self.receive)
-        rcv.start()
-
-    # The main layout of the chat
-    def layout(self, name):
-        """Create Chat page layout
-
-        Args:
-            name (_type_): _description_
-        """
+    def draw_chat_layout(self, name):
+        """The main layout of the chat page"""
         self.name = name
+
         # to show chat window
         self.window.deiconify()
         self.window.title("CHATROOM")
         self.window.resizable(width=False, height=False)
         self.window.configure(width=470, height=550, bg="#17202A")
+
         self.label_head = tk.Label(
             self.window,
             bg="#17202A",
@@ -106,19 +119,14 @@ class GUI:
             padx=5,
             pady=5,
         )
-
         self.text_cons.place(relheight=0.745, relwidth=1, rely=0.08)
 
         self.label_bottom = tk.Label(self.window, bg="#ABB2B9", height=80)
-
         self.label_bottom.place(relwidth=1, rely=0.825)
 
         self.entry_msg = tk.Entry(
             self.label_bottom, bg="#2C3E50", fg="#EAECEE", font="Helvetica 13"
         )
-
-        # place the given widget
-        # into the gui window
         self.entry_msg.place(relwidth=0.74, relheight=0.06, rely=0.008, relx=0.011)
 
         self.entry_msg.focus()
@@ -130,9 +138,8 @@ class GUI:
             font="Helvetica 10 bold",
             width=20,
             bg="#ABB2B9",
-            command=lambda: self.sendButton(self.entry_msg.get()),
+            command=lambda: self.send_button(self.entry_msg.get()),
         )
-
         self.button_msg.place(relx=0.77, rely=0.008, relheight=0.06, relwidth=0.22)
 
         self.text_cons.config(cursor="arrow")
@@ -148,57 +155,34 @@ class GUI:
 
         self.text_cons.config(state=tk.DISABLED)
 
-    # function to basically start the thread for sending messages
-    def sendButton(self, msg):
-        """Receive Button events
+    def send_button(self, msg):
+        """
+        Receive Button events
+
+            - starts the thread for sending messages
 
         Args:
-            msg (_type_): _description_
+            msg (str): Message to send
         """
         self.text_cons.config(state=tk.DISABLED)
-        self.msg = msg
+        self.msgs_to_send.append(msg)
         self.entry_msg.delete(0, tk.END)
-        snd = threading.Thread(target=self.sendMessage)
-        snd.start()
 
-    # function to receive messages
-    def receive(self):
-        """
-        Receive messages
-        """
-        while True:
-            try:
-                # Mimic latency and wait times
-                time.sleep(random.choice([1, 3, 4, 5, 10]))
-                message = "Hello, simple message"
+    @asgiref.sync.sync_to_async
+    def receive_message(self, message: str):
+        """Receive messages"""
+        if self.is_chatting:
+            self.text_cons.config(state=tk.NORMAL)
+            self.text_cons.insert(tk.END, message + "\n\n")
 
-                # if the messages from the server is NAME send the client's name
-                if message == "NAME":
-                    # client.send(self.name.encode(FORMAT))
-                    pass
-                else:
-                    # insert messages to text box
-                    self.text_cons.config(state=tk.NORMAL)
-                    self.text_cons.insert(tk.END, message + "\n\n")
+            self.text_cons.config(state=tk.DISABLED)
+            self.text_cons.see(tk.END)
 
-                    self.text_cons.config(state=tk.DISABLED)
-                    self.text_cons.see(tk.END)
-            except:
-                # an error will be printed on the command line or console if there's an error
-                print("An error occurred!")
-                break
-
-    # function to send messages
-    def sendMessage(self):
-        """
-        send new message
-        """
-        self.text_cons.config(state=tk.DISABLED)
-        while True:
-            message = f"{self.name}: {self.msg}"
-            # client.send(message.encode(FORMAT))
-            break
-
-
-# create a GUI class object
-g = GUI()
+    @asgiref.sync.sync_to_async
+    def send_message(self):
+        """Send new message"""
+        if self.msgs_to_send:
+            self.text_cons.config(state=tk.DISABLED)
+            for msg in self.msgs_to_send:
+                yield msg
+            self.msgs_to_send = list()
