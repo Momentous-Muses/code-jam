@@ -29,7 +29,7 @@ class Event:
         """
         return cls(**data)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         """
         Parse/Dump the fields of an event instance to a dictionary
 

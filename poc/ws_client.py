@@ -163,12 +163,9 @@ def start_gui_client():
     client_gui.start_mainloop()
 
 
-"""
-SIMPLE CLIENT
-"""
+# SIMPLE CLIENT
 # asyncio.run(start_simple_async_client())
 
-"""
-COMPLEX GUI CLIENT
-"""
+
+# COMPLEX GUI CLIENT
 start_gui_client()

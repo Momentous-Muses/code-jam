@@ -8,7 +8,7 @@
 
 `ws_client.py` : An implementation of websocket client with *`websockets`* library. Supports calls to a blocking "producer".
 
-# To Run
+## To Run
 Start Server
 ```bash
 > poetry run uvicorn poc.server:app
@@ -20,7 +20,3 @@ Start Client
 ```
 
 Uncomment as appropriate to run the CLI or GUI chat client
-
-# TODO
-
- - Ready to go 🚀
