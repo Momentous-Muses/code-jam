@@ -56,7 +56,7 @@ class WebsocketMessageDispatcher:
         thread.start()
         dispatcher = result_event.get_result()  # get the created WebsocketMessageDispatcher object
 
-        subscribe_id, message_queue = dispatcher.subscribe("channel")  # subscribe_id allows unsubscribe later on
+        subscribe_id, message_queue = dispatcher.subscribe("domain")  # subscribe_id allows unsubscribe later on
         message = message_queue.get()  # receive message
         dispatcher.queue_send(YourMessage())  # queue message to be sent
     """
@@ -73,18 +73,18 @@ class WebsocketMessageDispatcher:
         """Queue `message` to be sent."""
         self._loop.call_soon_threadsafe(self._send_queue.put_nowait, message)
 
-    def subscribe(self, channel: str) -> SubscribeResult:
-        """Subscribe to events from `channel`"""
-        queue_dict = self._receive_queues.setdefault(channel, {})
+    def subscribe(self, domain: str) -> SubscribeResult:
+        """Subscribe to events from `domain`"""
+        queue_dict = self._receive_queues.setdefault(domain, {})
         queue_: queue.SimpleQueue[Message] = queue.SimpleQueue()
         id_ = id(queue_)
         queue_dict[id_] = queue_
         return SubscribeResult(id_, queue_)
 
-    def unsubscribe(self, identifier: collections.abc.Hashable, channel: str) -> None:
-        """Unsubscribe from the `channel` with the `identifier` received from the subscribe method."""
+    def unsubscribe(self, identifier: collections.abc.Hashable, domain: str) -> None:
+        """Unsubscribe from the `domain` with the `identifier` received from the subscribe method."""
         with suppress(KeyError):
-            del self._receive_queues[channel][identifier]
+            del self._receive_queues[domain][identifier]
 
     @classmethod
     async def run(
@@ -111,7 +111,7 @@ class WebsocketMessageDispatcher:
         async for message in self._websocket:
             try:
                 message_payload = json.loads(message)
-                if "channel" not in message_payload or "type" not in message_payload:
+                if "domain" not in message_payload or "type" not in message_payload:
                     raise ValueError
             except ValueError:
                 log.warning("Received invalid json message payload.")
@@ -121,15 +121,15 @@ class WebsocketMessageDispatcher:
                 message = messages.message_from_dict(message_payload)
             except messages.UnknownMessageTypeError:
                 log.warning(
-                    f"Received unknown message type {message_payload['type']} for channel {message_payload['channel']}"
+                    f"Received unknown message type {message_payload['type']} for domain {message_payload['domain']}"
                 )
                 continue
 
             log.debug(
-                "Dispatching message of %s type to %s channel queues.",
+                "Dispatching message of %s type to %s domain queues.",
                 message.type_,
-                message.channel,
+                message.domain,
             )
-            if (queues := self._receive_queues.get(message.channel)) is not None:
+            if (queues := self._receive_queues.get(message.domain)) is not None:
                 for queue_ in queues.values():
                     queue_.put(message)
