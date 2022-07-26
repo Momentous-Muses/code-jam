@@ -7,6 +7,7 @@ import json
 import logging
 import queue  # noqa: F401 used in annotation
 import typing as t
+import uuid
 from weakref import WeakValueDictionary
 
 import websockets.client
@@ -138,6 +139,7 @@ class WebsocketMessageDispatcher:
     def __init__(self, *, websocket: websockets.client.WebSocketClientProtocol):
         self._websocket = websocket
         self._loop = asyncio.get_running_loop()
+        self._client_id = uuid.uuid4().hex
 
         # connections waiting for channel uuid, keys are request ids
         self._unprepared_connections: WeakValueDictionary[
@@ -183,6 +185,7 @@ class WebsocketMessageDispatcher:
             message, channel = await self._send_queue.get()
             message_dict = message.to_json_dict()
             message_dict["channel"] = channel
+            message_dict["client_id"] = self._client_id
             log.debug("Sending %s json through websocket.", message_dict)
             await self._websocket.send(json.dumps(message_dict))
 
