@@ -65,7 +65,7 @@ class Message(metaclass=_MessageABCMeta):
     type_: t.ClassVar[str] = UNINITIALIZED  # type: ignore
 
     @abc.abstractmethod
-    def to_json(self) -> str:
+    def to_json_dict(self) -> dict[str, t.Any]:
         """Create JSON to send to the server for this message."""
 
     @classmethod

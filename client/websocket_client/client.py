@@ -103,9 +103,9 @@ class WebsocketMessageDispatcher:
     async def _sender(self) -> None:
         while True:
             message = await self._send_queue.get()
-            message_json = message.to_json()
-            log.debug("Sending %s json through websocket.", message_json)
-            await self._websocket.send(message_json)
+            message_dict = message.to_json_dict()
+            log.debug("Sending %s json through websocket.", message_dict)
+            await self._websocket.send(json.dumps(message_dict))
 
     async def _handler(self) -> None:
         async for message in self._websocket:
