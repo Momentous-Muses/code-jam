@@ -10,6 +10,8 @@ from contextlib import suppress
 
 import websockets.client
 
+from client import utils
+
 from . import messages
 
 if t.TYPE_CHECKING:
@@ -96,7 +98,7 @@ class WebsocketMessageDispatcher:
         async with connect_factory() as websocket:
             inst = cls(websocket=websocket)
             result_event.set_result(inst)
-            send_task = asyncio.create_task(inst._sender())
+            send_task = utils.create_task(inst._sender())
             await inst._handler()
             await send_task
 
