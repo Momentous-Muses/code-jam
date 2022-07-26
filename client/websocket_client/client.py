@@ -118,6 +118,7 @@ class WebsocketMessageDispatcher:
 
     import asyncio
     import threading
+    from functools import partial
 
     import websockets.client
 
@@ -131,9 +132,10 @@ class WebsocketMessageDispatcher:
         thread.start()
         dispatcher = result_event.get_result()  # get the created WebsocketMessageDispatcher object
 
-        subscribe_id, message_queue = dispatcher.subscribe("domain")  # subscribe_id allows unsubscribe later on
-        message = message_queue.get()  # receive message
-        dispatcher.queue_send(YourMessage())  # queue message to be sent
+        connection = dispatcher.subscribe("domain")  # subscribe_id allows unsubscribe later on
+        connection.connection_established.connect(connection_established_callback)
+        connection.message_received.connect(message_received_callback)
+        connection.schedule_send(YourMessage())
     """
 
     def __init__(self, *, websocket: websockets.client.WebSocketClientProtocol):
