@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import typing as t
+from dataclasses import dataclass
 
 from .utils import UNINITIALIZED
 
@@ -73,6 +74,64 @@ class Message(metaclass=_MessageABCMeta):
     def from_json_dict(cls, json_: dict[str, t.Any]) -> te.Self:
         # TODO: json_ could have structure described with TypedDict and subclasses
         """Create a message from the `json` JSON dict."""
+
+
+@dataclass
+class ConnectionStartRequest(Message):
+    """Message type to start a new communication channel."""
+
+    domain = "communication"
+    type_ = "start_request"
+
+    request_id: str
+    channel_domain: str
+
+    def to_json_dict(self) -> dict[str, t.Any]:  # noqa: D102
+        return {"domain": self.domain, "type": self.type_, "id": self.request_id}
+
+    @classmethod
+    def from_json_dict(cls, json_: dict[str, t.Any]) -> te.Self:
+        """Only the client can start a connection request for channel."""
+        raise NotImplementedError(
+            "Connection start requests should only come from clients."
+        )
+
+
+@dataclass
+class ConnectionStartResponse(Message):
+    """Message type to receive a new channel's UUID."""
+
+    domain = "communication"
+    type_ = "start_response"
+
+    accepted: bool
+    generated_uuid: str
+    request_id: str
+
+    def to_json_dict(self) -> dict[str, t.Any]:
+        """Only the server can respond to a connection request."""
+        raise NotImplementedError(
+            "Only the server can create connection start responses."
+        )
+
+    @classmethod
+    def from_json_dict(cls, json_: dict[str, t.Any]) -> te.Self:  # noqa: D102
+        return cls(json_["accepted"], json_["uuid"], json_["id"])
+
+
+@dataclass
+class ConnectionEndRequest(Message):
+    """Message type to close a communication channel with `uuid`."""
+
+    domain = "communication"
+    type_ = "end_request"
+
+    def to_json_dict(self) -> dict[str, t.Any]:  # noqa: D102
+        return {"domain": self.domain, "type": self.type_}
+
+    @classmethod
+    def from_json_dict(cls, json_: dict[str, t.Any]) -> te.Self:  # noqa: D102
+        return cls()
 
 
 def message_from_dict(json_: dict[str, t.Any]) -> Message:

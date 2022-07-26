@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import collections.abc
+import itertools
 import json
 import logging
-import queue
+import queue  # noqa: F401 used in annotation
 import typing as t
-from contextlib import suppress
+from weakref import WeakValueDictionary
 
 import websockets.client
+from PySide6 import QtCore
 
+from __feature__ import snake_case, true_property  # noqa: F401
 from client import utils
 
 from . import messages
@@ -30,6 +33,75 @@ class SubscribeResult(t.NamedTuple):
 
     id: collections.abc.Hashable
     queue: queue.SimpleQueue[Message]
+
+
+class ScheduledMessage(t.NamedTuple):
+    """A message to send and the channel to send it through."""
+
+    message: Message
+    channel: str
+
+
+class Connection(QtCore.QObject):
+    """
+    A connection to the server through a channel.
+
+    When created the connection is unprepared while the channel is negotiated with the remote server,
+    and must have its channel set through `set_channel`.
+    """
+
+    connection_established = QtCore.Signal()
+    """Emitted when the connection is bound to a channel and ready to send/receive messages."""
+    connection_refused = QtCore.Signal()
+    """Emitted when the server refuses the creation of a new channel."""
+    connection_closed = QtCore.Signal()
+    """Emitted when the connection is closed."""
+    message_received = QtCore.Signal(messages.Message)
+    """Emitted with the message when a new message is received on the channel this is bound to."""
+
+    def __init__(
+        self,
+        *,
+        message_schedule_func: collections.abc.Callable[[ScheduledMessage], object],
+    ):
+        super().__init__()
+        self._channel = None
+        self._schedule_func = message_schedule_func
+        self._closed = False
+
+    def set_channel(self, channel: str) -> None:
+        """Set the connection's channel, and emit the `connection_established` signal with it."""
+        self._channel = channel
+        self.connection_established.emit()
+
+    def receive_message(self, message: Message):
+        """Receive the `message` and send it through the `message_received` signal."""
+        if isinstance(message, messages.ConnectionEndRequest):
+            self.close_connection()
+        else:
+            self.message_received.emit(message)
+
+    def schedule_send(self, message: Message):
+        """Schedule `message` to be sent to the server."""
+        if self._closed:
+            raise RuntimeError("Connection's channel has already been closed.")
+        else:
+            self._schedule_func(ScheduledMessage(message, self._channel))
+
+    def disconnect_channel(self):
+        """Schedule this connection to be closed."""
+        self.schedule_send(messages.ConnectionEndRequest())
+        self.close_connection()
+        self._closed = True
+
+    def close_connection(self):
+        """
+        Mark this connection as closed and emit the `connection_closed` signal.
+
+        Should be called when the channel is closed at the remote server instead of from this client.
+        """
+        self.connection_closed.emit()
+        self._closed = True
 
 
 class WebsocketMessageDispatcher:
@@ -65,28 +137,32 @@ class WebsocketMessageDispatcher:
 
     def __init__(self, *, websocket: websockets.client.WebSocketClientProtocol):
         self._websocket = websocket
-        self._receive_queues: dict[
-            str, dict[collections.abc.Hashable, queue.SimpleQueue[Message]]
-        ] = {}
-        self._send_queue: asyncio.Queue[Message] = asyncio.Queue()
         self._loop = asyncio.get_running_loop()
 
-    def queue_send(self, message: Message) -> None:
-        """Queue `message` to be sent."""
-        self._loop.call_soon_threadsafe(self._send_queue.put_nowait, message)
+        # connections waiting for channel uuid, keys are request ids
+        self._unprepared_connections: WeakValueDictionary[
+            str, Connection
+        ] = WeakValueDictionary()
+        # uuid to connection with channel using that uuid
+        self._connections: WeakValueDictionary[str, Connection] = WeakValueDictionary()
+        self._send_queue: asyncio.Queue[ScheduledMessage] = asyncio.Queue()
 
-    def subscribe(self, domain: str) -> SubscribeResult:
-        """Subscribe to events from `domain`"""
-        queue_dict = self._receive_queues.setdefault(domain, {})
-        queue_: queue.SimpleQueue[Message] = queue.SimpleQueue()
-        id_ = id(queue_)
-        queue_dict[id_] = queue_
-        return SubscribeResult(id_, queue_)
+        self._connection_request_id_iterator = map(str, itertools.count())
 
-    def unsubscribe(self, identifier: collections.abc.Hashable, domain: str) -> None:
-        """Unsubscribe from the `domain` with the `identifier` received from the subscribe method."""
-        with suppress(KeyError):
-            del self._receive_queues[domain][identifier]
+    def connect_channel(self, domain: str) -> Connection:
+        """Create a communication channel of the `domain` type."""
+        connection_request_id = next(self._connection_request_id_iterator)
+        connection = Connection(message_schedule_func=self._queue_send)
+        self._unprepared_connections[connection_request_id] = connection
+        log.info("Requesting channel with request id %r.", connection_request_id)
+        # Connection start negotiations have a static channel.
+        self._queue_send(
+            ScheduledMessage(
+                messages.ConnectionStartRequest(connection_request_id, domain),
+                "channel_communication_negotiation",
+            )
+        )
+        return connection
 
     @classmethod
     async def run(
@@ -104,8 +180,9 @@ class WebsocketMessageDispatcher:
 
     async def _sender(self) -> None:
         while True:
-            message = await self._send_queue.get()
+            message, channel = await self._send_queue.get()
             message_dict = message.to_json_dict()
+            message_dict["channel"] = channel
             log.debug("Sending %s json through websocket.", message_dict)
             await self._websocket.send(json.dumps(message_dict))
 
@@ -113,11 +190,19 @@ class WebsocketMessageDispatcher:
         async for message in self._websocket:
             try:
                 message_payload = json.loads(message)
-                if "domain" not in message_payload or "type" not in message_payload:
-                    raise ValueError
             except ValueError:
-                log.warning("Received invalid json message payload.")
+                log.warning("Received invalid json message payload. Body: %r", message)
                 continue
+
+            match message_payload:
+                case {"channel": channel, "type": _, "domain": _}:
+                    pass
+                case _:
+                    log.warning(
+                        "Received JSON is missing required keys. Body: %r",
+                        message_payload,
+                    )
+                    continue
 
             try:
                 message = messages.message_from_dict(message_payload)
@@ -127,11 +212,37 @@ class WebsocketMessageDispatcher:
                 )
                 continue
 
+            if isinstance(message, messages.ConnectionStartResponse):
+                self._handle_connection_start_response(message)
+                continue
+
             log.debug(
                 "Dispatching message of %s type to %s domain queues.",
                 message.type_,
                 message.domain,
             )
-            if (queues := self._receive_queues.get(message.domain)) is not None:
-                for queue_ in queues.values():
-                    queue_.put(message)
+            connection = self._connections.get(channel)
+            if connection is not None:
+                connection.receive_message(message)
+            else:
+                log.warning("Received message on unknown channel.")
+
+    def _handle_connection_start_response(
+        self,
+        message: messages.ConnectionStartResponse,
+    ):
+        connection = self._unprepared_connections.get(message.request_id)
+        if connection is None:
+            log.warning(
+                "Received unexpected connection start response with id %r.",
+                message.request_id,
+            )
+            return
+        connection.set_channel(message.generated_uuid)
+        del self._unprepared_connections[message.request_id]
+        self._connections[message.generated_uuid] = connection
+        log.info("Got channel for request %r.", message.request_id)
+
+    def _queue_send(self, to_schedule: ScheduledMessage) -> None:
+        """Queue `message` to be sent."""
+        self._loop.call_soon_threadsafe(self._send_queue.put_nowait, to_schedule)
