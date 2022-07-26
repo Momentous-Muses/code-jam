@@ -67,13 +67,28 @@ class Message(metaclass=_MessageABCMeta):
 
     @abc.abstractmethod
     def to_json_dict(self) -> dict[str, t.Any]:
-        """Create JSON to send to the server for this message."""
+        """
+        Create JSON to send to the server for this message.
+
+        The default implementation creates a dict of `vars(self)` merged with the domain and type.
+        """
+        instance_attrs = dict(vars(self))
+        return instance_attrs | {"domain": self.domain, "type": self.type_}
 
     @classmethod
     @abc.abstractmethod
     def from_json_dict(cls, json_: dict[str, t.Any]) -> te.Self:
         # TODO: json_ could have structure described with TypedDict and subclasses
-        """Create a message from the `json` JSON dict."""
+        """
+        Create a message from the `json` JSON dict.
+
+        The default implementation passes all of the data from the dict,
+        except for the domain, type and channel to the class' constructor.
+        """
+        json_.pop("domain")
+        json_.pop("type")
+        json_.pop("channel")
+        return cls(**json_)
 
 
 @dataclass
@@ -87,7 +102,7 @@ class ConnectionStartRequest(Message):
     channel_domain: str
 
     def to_json_dict(self) -> dict[str, t.Any]:  # noqa: D102
-        return {"domain": self.domain, "type": self.type_, "id": self.request_id}
+        return super().to_json_dict()
 
     @classmethod
     def from_json_dict(cls, json_: dict[str, t.Any]) -> te.Self:
@@ -127,11 +142,11 @@ class ConnectionEndRequest(Message):
     type_ = "end_request"
 
     def to_json_dict(self) -> dict[str, t.Any]:  # noqa: D102
-        return {"domain": self.domain, "type": self.type_}
+        return super().to_json_dict()
 
     @classmethod
     def from_json_dict(cls, json_: dict[str, t.Any]) -> te.Self:  # noqa: D102
-        return cls()
+        return super().from_json_dict(json_)
 
 
 def message_from_dict(json_: dict[str, t.Any]) -> Message:
