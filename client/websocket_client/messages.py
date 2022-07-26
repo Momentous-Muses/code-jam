@@ -83,7 +83,7 @@ class ConnectionStartRequest(Message):
     domain = "communication"
     type_ = "start_request"
 
-    request_id: str
+    id: str
     channel_domain: str
 
     def to_json_dict(self) -> dict[str, t.Any]:  # noqa: D102
