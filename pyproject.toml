@@ -10,6 +10,7 @@ python = "3.10.*"
 PySide6 = "^6.3.1"
 fastapi = "^0.79.0"
 websockets = "^10.3"
+ttkbootstrap = "^1.9.0"
 
 [tool.poetry.dev-dependencies]
 # Base tools
