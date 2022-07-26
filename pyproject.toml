@@ -24,6 +24,8 @@ flake8-docstrings = "~1.6.0"
 # PEP8 formatter
 black = "~22.6.0"
 
+[tool.isort]
+known_first_party = ["__feature__"]  # has to be imported after pyside
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
