@@ -247,10 +247,16 @@ class WebsocketMessageDispatcher:
                 message.request_id,
             )
             return
-        connection.set_channel(message.generated_uuid)
-        del self._unprepared_connections[message.request_id]
-        self._connections[message.generated_uuid] = connection
-        log.info("Got channel for request %r.", message.request_id)
+        if not message.accepted:
+            connection.connection_refused.emit()
+            log.info(
+                "Creation of channel for request id %r refused", message.request_id
+            )
+        else:
+            connection.set_channel(t.cast(str, message.generated_uuid))
+            del self._unprepared_connections[message.request_id]
+            self._connections[t.cast(str, message.generated_uuid)] = connection
+            log.info("Got channel for request %r.", message.request_id)
 
     def _queue_send(self, to_schedule: ScheduledMessage) -> None:
         """Queue `message` to be sent."""
