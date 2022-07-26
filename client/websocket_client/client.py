@@ -84,10 +84,12 @@ class Connection(QtCore.QObject):
 
     def schedule_send(self, message: Message):
         """Schedule `message` to be sent to the server."""
+        if self._channel is None:
+            raise RuntimeError("The connection is not yet ready.")
         if self._closed:
             raise RuntimeError("Connection's channel has already been closed.")
-        else:
-            self._schedule_func(ScheduledMessage(message, self._channel))
+
+        self._schedule_func(ScheduledMessage(message, self._channel))
 
     def disconnect_channel(self):
         """Schedule this connection to be closed."""
