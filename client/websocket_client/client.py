@@ -211,7 +211,9 @@ class WebsocketMessageDispatcher:
                 message = messages.message_from_dict(message_payload)
             except messages.UnknownMessageTypeError:
                 log.warning(
-                    f"Received unknown message type {message_payload['type']} for domain {message_payload['domain']}"
+                    "Received unknown message type %r for domain %r",
+                    message_payload["type"],
+                    message_payload["domain"],
                 )
                 continue
 
