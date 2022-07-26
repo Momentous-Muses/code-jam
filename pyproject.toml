@@ -7,6 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "3.10.*"
+PySide6 = "^6.3.1"
 fastapi = "^0.79.0"
 websockets = "^10.3"
 ttkbootstrap = "^1.9.0"
@@ -16,6 +17,7 @@ ttkbootstrap = "^1.9.0"
 flake8 = "~4.0.1"
 isort = "~5.10.1"
 pre-commit = "~2.17.0"
+typing-extensions = "~4.3.0"
 
 # Flake8 plugins, see https://github.com/python-discord/code-jam-template/tree/main#plugin-list
 flake8-docstrings = "~1.6.0"
@@ -23,6 +25,8 @@ flake8-docstrings = "~1.6.0"
 # PEP8 formatter
 black = "~22.6.0"
 
+[tool.isort]
+known_first_party = ["__feature__"]  # has to be imported after pyside
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
