@@ -120,7 +120,7 @@ class ConnectionStartResponse(Message):
     type_ = "start_response"
 
     accepted: bool
-    generated_uuid: str
+    generated_uuid: str | None
     request_id: str
 
     def to_json_dict(self) -> dict[str, t.Any]:
