@@ -1,23 +1,44 @@
-import tkinter as tk
+import logging.handlers
+import sys
 
+from PySide6 import QtWidgets
 
-class MainApplication(tk.Frame):
-    """The main application."""
+from __feature__ import snake_case, true_property  # noqa: F401
+from client.error_handler import AppErrorHandler
+from client.main_window.main_window import MainSelectionWindow
+from client.qt_utils import init_qt_logging, interrupt_timer
 
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.parent = parent
-        self.server_process = None
+app = QtWidgets.QApplication()
+app.set_style("Fusion")
 
+root_logger = logging.getLogger()
 
-def run_gui():
-    """Setup TK root and add the main frame."""
-    root = tk.Tk()
-    app = MainApplication(root)
-    app.pack(side="top", fill="both", expand=True)
+log_format = logging.Formatter(
+    "{asctime} | {name:>40} | {levelname:>7} | {message}",
+    datefmt="%H:%M:%S",
+    style="{",
+)
 
-    root.mainloop()
+if __debug__:
+    root_logger.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
+    stream_handler.setFormatter(log_format)
+    root_logger.addHandler(stream_handler)
 
+file_handler = logging.handlers.RotatingFileHandler(
+    "log.log", maxBytes=1024 * 1024, backupCount=2, encoding="utf8"
+)
+file_handler.setFormatter(log_format)
+root_logger.addHandler(file_handler)
 
-if __name__ == "__main__":
-    run_gui()
+init_qt_logging()
+
+interrupter = interrupt_timer(app)
+
+error_handler = AppErrorHandler(app)
+sys.excepthook = error_handler.handler
+
+main_window = MainSelectionWindow(error_handler)
+main_window.show()
+
+app.exec()
