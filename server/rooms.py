@@ -2,6 +2,10 @@
 
 """Module to create manage rooms."""
 
+from typing import List
+
+import users
+
 
 class Room:
     """A single room of users.
@@ -10,7 +14,11 @@ class Room:
       adding/removing apps/plugins, etc.
     """
 
-    pass
+    def __init__(self):
+        self.connected_users: List[users.User] = []  # Stores user objects.
+
+        # This may change as we decide fully on how plugins will work.
+        self.plugins = []  # Stores plugin objects.
 
 
 class RoomManager:
