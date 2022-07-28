@@ -17,8 +17,16 @@ class User:
 
         self.room: rooms.Room = None
 
+        self.nick = "AnonymousUser"
+
     def connect_room(self, room: rooms.Room):
         """Connect user to room."""
         self.room = room
 
         # May contain more complex code at some time.
+
+    def add_nick(self, nick: str) -> None:
+        """Add a nickname to the user."""
+        self.nick = nick
+
+        # This will need to also send a packet to all users in the user's room that the nick has changed.
