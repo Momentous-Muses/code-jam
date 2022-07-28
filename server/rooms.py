@@ -5,6 +5,7 @@
 from typing import List
 
 import users
+import uuid
 
 
 class Room:
@@ -19,6 +20,12 @@ class Room:
 
         # This may change as we decide fully on how plugins will work.
         self.plugins = []  # Stores plugin objects.
+
+        self.id = self.gen_id()
+
+    def gen_id(self) -> uuid.UUID:
+        """Generate a UUID for the Room."""
+        return uuid.uuid4()
 
 
 class RoomManager:
