@@ -2,10 +2,12 @@
 
 """Module to create manage rooms."""
 
+from __future__ import annotations
+
+import uuid
 from typing import List
 
-import users
-import uuid
+from . import users
 
 
 class Room:
@@ -34,4 +36,23 @@ class RoomManager:
     This class will store and manage all the rooms on an instance of the server.
     """
 
-    pass
+    def __init__(self):
+        self.rooms = []
+
+    def add_room(self, room: Room) -> None:
+        """Add a room to the list."""
+        self.rooms.append(room)
+
+    def __getitem__(self, index: uuid.UUID):
+        """Get a room by its UUID."""
+        if not isinstance(index, uuid.UUID):
+            raise TypeError("Rooms must be indexed by a uuid.UUID.")
+
+        if isinstance(index, tuple):
+            raise ValueError("Multi-dimensional indicies cannot be used with RoomManager.")
+
+        for room in self.rooms:
+            if room.id == index:
+                return room
+
+        raise ValueError(f"Room with UUID <{str(index)}> not found.")

@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 
 """User management classes."""
+from __future__ import annotations
 
-import rooms
+from . import rooms
 
 
 class User:
