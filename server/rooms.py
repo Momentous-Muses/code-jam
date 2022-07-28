@@ -45,11 +45,10 @@ class RoomManager:
 
     def __getitem__(self, index: uuid.UUID):
         """Get a room by its UUID."""
-        if not isinstance(index, uuid.UUID):
-            raise TypeError("Rooms must be indexed by a uuid.UUID.")
-
         if isinstance(index, tuple):
             raise ValueError("Multi-dimensional indicies cannot be used with RoomManager.")
+        elif not isinstance(index, uuid.UUID):
+            raise TypeError("Rooms must be indexed by a uuid.UUID.")
 
         for room in self.rooms:
             if room.id == index:
