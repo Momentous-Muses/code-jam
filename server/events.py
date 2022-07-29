@@ -105,4 +105,4 @@ class RoomSubdivided(Event):
     room_id: str
     data: Any
 
-    type: str = "client-joined-room"
+    type: str = "room-subdivided"

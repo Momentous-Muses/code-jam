@@ -5,13 +5,13 @@
 Start the server using
 
 ```bash
-uvicorn server.__main__:app --reload
+poetry run python server
 ```
 
 ## Client
 
-```
-python -m client
+```bash
+poetry run python -m client
 ```
 
 ## Poetry
