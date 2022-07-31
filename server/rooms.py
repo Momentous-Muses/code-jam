@@ -29,6 +29,12 @@ class Room:
         """Generate a UUID for the Room."""
         return uuid.uuid4()
 
+    def add_plugin(self, plugin) -> None:
+        """Install a plugin to a room."""
+        self.plugins.append(plugin)
+
+        # Send event to the plugin to initialise it?
+
 
 class RoomManager:
     """Store/Manage Rooms.
@@ -46,7 +52,9 @@ class RoomManager:
     def __getitem__(self, index: uuid.UUID):
         """Get a room by its UUID."""
         if isinstance(index, tuple):
-            raise ValueError("Multi-dimensional indicies cannot be used with RoomManager.")
+            raise ValueError(
+                "Multi-dimensional indicies cannot be used with RoomManager."
+            )
         elif not isinstance(index, uuid.UUID):
             raise TypeError("Rooms must be indexed by a uuid.UUID.")
 
