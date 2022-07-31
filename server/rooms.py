@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import uuid
-from typing import List
+from typing import List, Type
 
-from . import users
+from . import plugins, users
 
 
 class Room:
@@ -29,7 +29,7 @@ class Room:
         """Generate a UUID for the Room."""
         return uuid.uuid4()
 
-    def add_plugin(self, plugin) -> None:
+    def add_plugin(self, plugin: Type[plugins.BasePlugin]) -> None:
         """Install a plugin to a room."""
         self.plugins.append(plugin)
 
