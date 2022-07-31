@@ -1,19 +1,8 @@
-from fastapi import FastAPI, WebSocket
-from starlette.staticfiles import StaticFiles
+import uvicorn
 
-"""
-uvicorn server.__main__:app --reload
+HOST = "127.0.0.1"
+PORT = 5000
+RELOAD = True
 
-Run FastAPI server with websockets.
-"""
-app = FastAPI()
-
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """Websocket example"""
-    # data = await websocket.receive_json()
-    ...
-
-
-app.mount("/", StaticFiles(directory="web"), name="web")
+if __name__ == "__main__":
+    uvicorn.run("server:app", host=HOST, port=PORT, reload=RELOAD, log_level="info")
